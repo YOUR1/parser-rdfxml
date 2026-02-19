@@ -1,0 +1,4 @@
+# Preserve original line endings for W3C test fixture files
+*.rdf binary
+*.nt binary
+*.ttl binary

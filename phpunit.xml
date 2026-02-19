@@ -4,6 +4,12 @@
     <testsuite name="Unit">
       <directory>tests/Unit</directory>
     </testsuite>
+    <testsuite name="Characterization">
+      <directory>tests/Characterization</directory>
+    </testsuite>
+    <testsuite name="Conformance">
+      <directory>tests/Conformance</directory>
+    </testsuite>
   </testsuites>
   <coverage>
     <report>

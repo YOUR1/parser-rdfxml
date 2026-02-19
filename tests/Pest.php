@@ -1,3 +1,5 @@
 <?php
 
-pest()->in('Unit');
+declare(strict_types=1);
+
+pest()->in('Unit', 'Characterization', 'Conformance');
