@@ -18,9 +18,8 @@ jobs:
       - uses: ramsey/composer-install@v3
       - name: Run tests
         run: vendor/bin/pest --colors=always --coverage-clover=coverage.xml
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          name: coverage
-          path: coverage.xml
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
