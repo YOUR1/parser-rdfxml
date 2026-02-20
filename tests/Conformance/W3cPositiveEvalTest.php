@@ -33,16 +33,10 @@ $fixtureBase = __DIR__ . '/../Fixtures/W3c';
 
 /**
  * Tests that fail due to handler limitations (not RDF/XML spec issues).
- * These use bare <RDF> root element with default namespace instead of <rdf:RDF>.
- * Handler's looksLikeXml() only checks for <?xml or <rdf:RDF prefixed element.
+ * Previously: bare <RDF> root tests were skipped due to looksLikeXml() limitation.
+ * Now resolved: canHandle() and looksLikeXml() detect bare RDF root with default namespace.
  */
-const W3C_HANDLER_LIMITATION_TESTS = [
-    'rdf-ns-prefix-confusion-test0010',
-    'rdf-ns-prefix-confusion-test0011',
-    'rdf-ns-prefix-confusion-test0012',
-    'rdf-ns-prefix-confusion-test0013',
-    'rdf-ns-prefix-confusion-test0014',
-];
+const W3C_HANDLER_LIMITATION_TESTS = [];
 
 /**
  * Parse manifest.ttl to extract active TestXMLEval test entries.

@@ -175,6 +175,73 @@ describe('RdfXmlHandler', function () {
         expect($result->metadata['xml_element'])->toBeInstanceOf(SimpleXMLElement::class);
     });
 
+    it('emits no E_DEPRECATED warnings on PHP 8.4+ during parse', function () {
+        $content = '<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+    <rdfs:Class rdf:about="http://example.org/Person">
+        <rdfs:label>Person</rdfs:label>
+    </rdfs:Class>
+
+</rdf:RDF>';
+
+        $deprecations = [];
+        $previousHandler = set_error_handler(function (int $errno, string $errstr) use (&$deprecations): bool {
+            if ($errno === E_DEPRECATED) {
+                $deprecations[] = $errstr;
+                return true;
+            }
+            return false;
+        });
+
+        try {
+            $result = $this->handler->parse($content);
+        } finally {
+            restore_error_handler();
+        }
+
+        expect($deprecations)->toBeEmpty(
+            'Expected no E_DEPRECATED warnings, got: ' . implode('; ', $deprecations)
+        );
+        expect($result)->toBeInstanceOf(ParsedRdf::class);
+    });
+
+    it('provides SimpleXML fallback without deprecation warnings when EasyRdf fails on PHP 8.4+', function () {
+        $content = '<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+    <rdfs:Class rdf:about="http://example.org/Person">
+        <rdfs:label>Person</rdfs:label>
+        <rdfs:comment>A human being</rdfs:comment>
+    </rdfs:Class>
+
+</rdf:RDF>';
+
+        $deprecations = [];
+        set_error_handler(function (int $errno, string $errstr) use (&$deprecations): bool {
+            if ($errno === E_DEPRECATED) {
+                $deprecations[] = $errstr;
+                return true;
+            }
+            return false;
+        });
+
+        try {
+            $result = $this->handler->parse($content);
+        } finally {
+            restore_error_handler();
+        }
+
+        expect($deprecations)->toBeEmpty();
+        // SimpleXML element should always be available as fallback
+        expect($result->metadata['xml_element'])->toBeInstanceOf(SimpleXMLElement::class);
+        // On PHP 8.4+, EasyRdf RDF/XML parser throws ValueError so graph may be empty
+        // The xml_element provides the parsed XML data for extractors
+        expect($result)->toBeInstanceOf(ParsedRdf::class);
+    });
+
     it('parses RDF/XML with blank nodes', function () {
         $content = '<?xml version="1.0"?>
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"

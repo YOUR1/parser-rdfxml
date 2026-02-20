@@ -9,21 +9,22 @@ use Youri\vandenBogert\Software\ParserRdfXml\RdfXmlHandler;
  * W3C RDF/XML Negative Syntax Tests (TestXMLNegativeSyntax).
  *
  * These tests exercise RdfXmlHandler against all W3C RDF/XML negative test cases.
- * The parser SHOULD reject each input .rdf file by throwing an exception.
+ * The parser MUST reject each input .rdf file by throwing a ParseException.
  *
- * KNOWN LIMITATION: RdfXmlHandler validates XML well-formedness via SimpleXML,
- * not RDF/XML semantics. Most W3C negative tests contain well-formed XML that
- * violates RDF/XML rules (e.g., rdf:li as attribute, rdf:RDF as node element,
- * illegal rdf:ID values). SimpleXML parses these without error because they are
- * valid XML. EasyRdf might catch some RDF-level errors, but on PHP 8.4+ it fails
- * silently. Therefore, many negative tests are expected to NOT throw and are
- * documented as known limitations.
+ * RdfXmlHandler implements semantic validation for:
+ * - rdf:ID and rdf:nodeID NCName validation
+ * - Forbidden element names (node and property positions)
+ * - Deprecated attribute rejection (rdf:aboutEach, rdf:aboutEachPrefix, rdf:bagID)
+ * - Conflicting attribute detection (rdf:about+rdf:nodeID, rdf:resource+rdf:nodeID, etc.)
+ * - Duplicate rdf:ID detection within a document
+ * - rdf:li as attribute rejection
+ * - rdf:parseType + rdf:resource conflict
  *
  * Test cases sourced from: https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-xml/
  * Manifest: tests/Fixtures/W3c/manifest.ttl
  *
  * Total active negative syntax tests in manifest: 40
- * (1 additional test is commented out in the manifest)
+ * All 40 tests pass (parser correctly rejects all invalid input).
  */
 
 $fixtureBase = __DIR__ . '/../Fixtures/W3c';
@@ -95,20 +96,7 @@ describe('W3C RDF/XML Negative Syntax Tests (TestXMLNegativeSyntax)', function (
         $input = file_get_contents($inputPath);
         expect($input)->not->toBeFalse("Fixture file not readable: {$inputPath}");
 
-        try {
-            $this->handler->parse($input);
-
-            // If we reach here, handler accepted invalid input.
-            // Known limitation: RdfXmlHandler validates XML well-formedness via SimpleXML,
-            // not RDF/XML semantics. On PHP 8.4+, EasyRdf fails silently, so RDF-level
-            // validation is absent. The handler does NOT reject this input even though
-            // the W3C specification says it should be rejected.
-            $this->markTestSkipped(
-                'Known limitation: handler accepts well-formed XML with invalid RDF/XML semantics'
-            );
-        } catch (ParseException) {
-            // Handler correctly rejected invalid RDF/XML input
-            expect(true)->toBeTrue();
-        }
+        expect(fn () => $this->handler->parse($input))
+            ->toThrow(ParseException::class);
     })->with('w3c-negative-syntax-tests');
 });
